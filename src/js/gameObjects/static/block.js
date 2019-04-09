@@ -1,23 +1,21 @@
-var keys = require('../utils/utils.keysDown.js'),
-    mathHelpers = require('../utils/utils.math.js');
-
-/** Player Module
- * Main player entity module.
- */
 function block(scope, x, y, w, h) {
-    var block = this;
+    let block = this;
 
     // Create the initial state
     block.state = {
         position: {
             x: x,
             y: y
+        },
+        size: {
+            height: h,
+            width: w
         }
     };
 
     // Set up any other constants
-    var height = w,
-        width = h;
+    let height = h,
+        width = w;
 
     // Draw the player on the canvas
     block.render = function blockRender() {

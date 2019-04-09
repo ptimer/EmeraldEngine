@@ -1,19 +1,28 @@
-    // Modules
-var gameLoop = require('./core/game.loop.js'),
-    gameUpdate = require('./core/game.update.js'),
-    gameRender = require('./core/game.render.js'),
-    // Entities
-    playerEnt = require('./players/player.js'),
+// Modules
+let modules = {
+    gameLoop: require('./core/game.loop.js'),
+    EngineSettings: require('./core/game.engineSettings.js'),
+    gameUpdate: require('./core/game.update.js'),
+    gameRender: require('./core/game.render.js'),
+    collision: require('./core/game.collision.js')
+}
 
-    //StaticObjects
-    blockStat = require('./static/block.js'),
+// Entities
+let entities = {
+    playerEnt: require('./gameObjects/players/player.js')
+}
+//StaticObjects
+let StaticObjects = {
+    blockStat: require('./gameObjects/static/block.js')
+}
 
-    // Utilities
-    cUtils = require('./utils/utils.canvas.js'), // require our canvas utils
-    $container = document.getElementById('container');
+let ui = {
+    titleAndFps: require('./gameObjects/ui/titleAndFps.js')
+}
 
-function Game(w, h, targetFps, showFps) {
-    var that;
+
+function EmeraldEngine(w, h, targetFps, showFps) {
+    var $this = this;
 
     // Setup some constants
     this.constants = {
@@ -23,40 +32,51 @@ function Game(w, h, targetFps, showFps) {
         showFps: showFps
     };
 
-    // Instantiate an empty state object
-    this.state = {};
-
-  // Generate a canvas and store it as our viewport
-    this.viewport = cUtils.generateCanvas(w, h);
-    this.viewport.id = "gameViewport";
-
-    // Get and store the canvas context as a global
-    this.context = this.viewport.getContext('2d');
-
-    // Append viewport into our container within the dom
-    $container.insertBefore(this.viewport, $container.firstChild);
+    modules.EngineSettings.initializeGame(this, {canvasWidth: w, canvasHeight: h});
+    
 
     // Instantiate core modules with the current scope
-    this.update = gameUpdate( this );
-    this.render = gameRender( this );
-    this.loop = gameLoop( this );
+    this.update = modules.gameUpdate( this );
+    this.render = modules.gameRender( this );
+    this.loop = modules.gameLoop( this );
 
-    that = this;
 
-    var createEntities = function createEntities() {
-        that.state.entities = that.state.entities || {};
-        that.state.entities.player = new playerEnt(that, (w / 2), (h - 100));
+    // |- Game Logic
+
+    var createEntities = function() {
+        $this.state.entities = $this.state.entities || {};
+
+        $this.state.entities.player = new entities.playerEnt($this, (w / 2), (h - 100), 16, 23);
     }();
 
-    var createStaticObjects = function createStaticObjects(){
-        that.state.staticObjects = that.state.staticObjects || {};
-        that.state.staticObjects.blockStat = new blockStat(that, 0, (h - 40), 20, w);
+    var createStaticObjects = function(){
+
+        $this.state.entities.blockStat = new StaticObjects.blockStat($this, 0, (h - 40), w, 20);
+        $this.state.entities.blockStat2 = new StaticObjects.blockStat($this, 300, (h - 200), 50, 50);
     }();
+
+    var createUi = function(){
+        $this.state.entities.titleAndFps = new ui.titleAndFps($this);
+    }();
+
+
+    var createCollisions = function(){
+       $this.state.collisions = $this.state.collisions || {};
+
+       $this.state.collisions.mouseAndBlock = new modules.collision();
+       $this.state.collisions.mouseAndBlock.detect($this.state.entities.player.state, $this.state.entities.blockStat.state, "block 1");
+
+
+       $this.state.collisions.mouseAndBlock2 = new modules.collision();
+       $this.state.collisions.mouseAndBlock2.detect($this.state.entities.player.state, $this.state.entities.blockStat2.state, "block 2");
+    }();
+
+    // Game Logic -|
 
     return this;
 }
 
 // Instantiate a new game in the global scope at 800px by 600px
-window.game = new Game(800, 600, 60, true);
+window.game = new EmeraldEngine(800, 600, 60, true);
 
 module.exports = game;

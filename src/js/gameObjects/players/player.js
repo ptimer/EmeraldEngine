@@ -1,11 +1,11 @@
-var keys = require('../utils/utils.keysDown.js'),
-    mathHelpers = require('../utils/utils.math.js');
+let keys = require('../../utils/utils.keysDown.js'),
+    mathHelpers = require('../../utils/utils.math.js');
 
 /** Player Module
  * Main player entity module.
  */
-function Player(scope, x, y) {
-    var player = this;
+function Player(scope, x, y, w, h) {
+    let player = this;
 
     // Create the initial state
     player.state = {
@@ -13,12 +13,16 @@ function Player(scope, x, y) {
             x: x,
             y: y
         },
-        moveSpeed: 1.5
+        size: {
+            width: w,
+            height: h
+        },
+        moveSpeed: 5
     };
 
     // Set up any other constants
-    var height = 23,
-        width = 16;
+    let height = h,
+        width = w;
 
     // Draw the player on the canvas
     player.render = function playerRender() {

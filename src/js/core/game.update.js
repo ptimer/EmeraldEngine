@@ -5,23 +5,26 @@
  */
 function gameUpdate ( scope ) {
     return function update( tFrame ) {
-        var state = scope.state || {};
-
-        if(scope.state.hasOwnProperty('staticObjects')){
-            var staticObjects = scope.state.staticObjects;
-
-            for(var obj in staticObjects){
-                staticObjects[obj].update();
-            }
-        }
+        let state = scope.state || {};
 
         // If there are entities, iterate through them and call their `update` methods
         if (state.hasOwnProperty('entities')) {
-            var entities = scope.state.entities;
+            let entities = scope.state.entities;
             // Loop through entities
-            for (var entity in entities) {
+            for (let entity in entities) {
                 // Fire off each active entities `render` method
                 entities[entity].update();
+            }
+        }
+
+        // Collisions
+
+        if (state.hasOwnProperty('collisions')) {
+            let collisions = scope.state.collisions;
+            // Loop through entities
+            for (let collision in collisions) {
+                // Fire off each active entities `render` method
+                collisions[collision].update();
             }
         }
 

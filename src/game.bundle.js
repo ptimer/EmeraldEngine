@@ -1,4 +1,59 @@
 (function(){function r(e,n,t){function o(i,f){if(!n[i]){if(!e[i]){var c="function"==typeof require&&require;if(!f&&c)return c(i,!0);if(u)return u(i,!0);var a=new Error("Cannot find module '"+i+"'");throw a.code="MODULE_NOT_FOUND",a}var p=n[i]={exports:{}};e[i][0].call(p.exports,function(r){var n=e[i][1][r];return o(n||r)},p,p.exports,r,e,n,t)}return n[i].exports}for(var u="function"==typeof require&&require,i=0;i<t.length;i++)o(t[i]);return o}return r})()({1:[function(require,module,exports){
+function collision(){
+	var A;
+	var B;
+	var message;
+
+	this.detect = function(obj1, obj2, message){
+		this.A = obj1;
+		this.B = obj2;
+		this.message = message;
+	}
+
+	this.update = function(){
+
+		if (
+		    this.A.position.x < this.B.position.x + this.B.size.width &&
+		    this.A.position.x + this.A.size.width > this.B.position.x &&
+		    this.A.position.y < this.B.position.y + this.B.size.height &&
+		    this.A.position.y + this.A.size.height > this.B.position.y
+		  ) {
+		    console.log(this.message);
+		  }
+	}
+
+	this.getDistance = function(x1, y1, x2, y2){
+		let xDistance = x2 - x1;
+		let yDistance = y2 - y1;
+
+		return Math.sqrt(Math.pow(xDistance, 2) + Math.pow(yDistance, 2));
+	}
+}
+
+module.exports = collision;
+},{}],2:[function(require,module,exports){
+// Utilities
+    cUtils = require('../utils/utils.canvas.js'), // require our canvas utils
+    $container = document.getElementById('container');
+
+EngineSettings = {
+	
+	initializeGame: function(scope, canvasSettings){
+
+		scope.state = {}
+
+		scope.viewport = cUtils.generateCanvas(canvasSettings.canvasWidth, canvasSettings.canvasHeight);
+	    scope.viewport.id = "gameViewport";
+
+	    scope.context = scope.viewport.getContext('2d');
+
+	    $container.insertBefore(scope.viewport, $container.firstChild);
+	}
+	
+}
+
+module.exports = EngineSettings;
+},{"../utils/utils.canvas.js":10}],3:[function(require,module,exports){
 /** Game Loop Module
  * This module contains the game loop, which handles
  * updating the game state and re-rendering the canvas
@@ -89,7 +144,7 @@ function gameLoop ( scope ) {
 }
 
 module.exports = gameLoop;
-},{}],2:[function(require,module,exports){
+},{}],4:[function(require,module,exports){
 /** Game Render Module
  * Called by the game loop, this module will
  * perform use the global state to re-render
@@ -99,50 +154,27 @@ module.exports = gameLoop;
  */
 function gameRender( scope ) {
     // Setup globals
-    var w = scope.constants.width,
+    let w = scope.constants.width,
         h = scope.constants.height;
 
     return function render() {
         // Clear out the canvas
         scope.context.clearRect(0, 0, w, h);
-        
-        // Spit out some text
-        scope.context.font = '32px Arial';
-        scope.context.fillStyle = '#fff';
-        scope.context.fillText('It\'s dangerous to travel this route alone.', 5, 50);
-
-
-
-        // If we want to show the FPS, then render it in the top right corner.
-        if (scope.constants.showFps) {
-            scope.context.fillStyle = '#ff0';
-            scope.context.fillText(scope.loop.fps, w - 100, 50);
-        }
 
         // If there are entities, iterate through them and call their `render` methods
         if (scope.state.hasOwnProperty('entities')) {
-            var entities = scope.state.entities;
+            let entities = scope.state.entities;
             // Loop through entities
-            for (var entity in entities) {
+            for (let entity in entities) {
                 // Fire off each active entities `render` method
                 entities[entity].render();
-            }
-        }
-
-        // Render static objects
-
-        if(scope.state.hasOwnProperty('staticObjects')){
-            var staticObjects = scope.state.staticObjects;
-
-            for(var obj in staticObjects){
-                staticObjects[obj].render();
             }
         }
     }
 }
 
 module.exports = gameRender;
-},{}],3:[function(require,module,exports){
+},{}],5:[function(require,module,exports){
 /** Game Update Module
  * Called by the game loop, this module will
  * perform any state calculations / updates
@@ -150,23 +182,26 @@ module.exports = gameRender;
  */
 function gameUpdate ( scope ) {
     return function update( tFrame ) {
-        var state = scope.state || {};
-
-        if(scope.state.hasOwnProperty('staticObjects')){
-            var staticObjects = scope.state.staticObjects;
-
-            for(var obj in staticObjects){
-                staticObjects[obj].update();
-            }
-        }
+        let state = scope.state || {};
 
         // If there are entities, iterate through them and call their `update` methods
         if (state.hasOwnProperty('entities')) {
-            var entities = scope.state.entities;
+            let entities = scope.state.entities;
             // Loop through entities
-            for (var entity in entities) {
+            for (let entity in entities) {
                 // Fire off each active entities `render` method
                 entities[entity].update();
+            }
+        }
+
+        // Collisions
+
+        if (state.hasOwnProperty('collisions')) {
+            let collisions = scope.state.collisions;
+            // Loop through entities
+            for (let collision in collisions) {
+                // Fire off each active entities `render` method
+                collisions[collision].update();
             }
         }
 
@@ -175,23 +210,32 @@ function gameUpdate ( scope ) {
 }
 
 module.exports = gameUpdate;
-},{}],4:[function(require,module,exports){
-    // Modules
-var gameLoop = require('./core/game.loop.js'),
-    gameUpdate = require('./core/game.update.js'),
-    gameRender = require('./core/game.render.js'),
-    // Entities
-    playerEnt = require('./players/player.js'),
+},{}],6:[function(require,module,exports){
+// Modules
+let modules = {
+    gameLoop: require('./core/game.loop.js'),
+    EngineSettings: require('./core/game.engineSettings.js'),
+    gameUpdate: require('./core/game.update.js'),
+    gameRender: require('./core/game.render.js'),
+    collision: require('./core/game.collision.js')
+}
 
-    //StaticObjects
-    blockStat = require('./static/block.js'),
+// Entities
+let entities = {
+    playerEnt: require('./gameObjects/players/player.js')
+}
+//StaticObjects
+let StaticObjects = {
+    blockStat: require('./gameObjects/static/block.js')
+}
 
-    // Utilities
-    cUtils = require('./utils/utils.canvas.js'), // require our canvas utils
-    $container = document.getElementById('container');
+let ui = {
+    titleAndFps: require('./gameObjects/ui/titleAndFps.js')
+}
 
-function Game(w, h, targetFps, showFps) {
-    var that;
+
+function EmeraldEngine(w, h, targetFps, showFps) {
+    var $this = this;
 
     // Setup some constants
     this.constants = {
@@ -201,52 +245,63 @@ function Game(w, h, targetFps, showFps) {
         showFps: showFps
     };
 
-    // Instantiate an empty state object
-    this.state = {};
-
-  // Generate a canvas and store it as our viewport
-    this.viewport = cUtils.generateCanvas(w, h);
-    this.viewport.id = "gameViewport";
-
-    // Get and store the canvas context as a global
-    this.context = this.viewport.getContext('2d');
-
-    // Append viewport into our container within the dom
-    $container.insertBefore(this.viewport, $container.firstChild);
+    modules.EngineSettings.initializeGame(this, {canvasWidth: w, canvasHeight: h});
+    
 
     // Instantiate core modules with the current scope
-    this.update = gameUpdate( this );
-    this.render = gameRender( this );
-    this.loop = gameLoop( this );
+    this.update = modules.gameUpdate( this );
+    this.render = modules.gameRender( this );
+    this.loop = modules.gameLoop( this );
 
-    that = this;
 
-    var createEntities = function createEntities() {
-        that.state.entities = that.state.entities || {};
-        that.state.entities.player = new playerEnt(that, (w / 2), (h - 100));
+    // |- Game Logic
+
+    var createEntities = function() {
+        $this.state.entities = $this.state.entities || {};
+
+        $this.state.entities.player = new entities.playerEnt($this, (w / 2), (h - 100), 16, 23);
     }();
 
-    var createStaticObjects = function createStaticObjects(){
-        that.state.staticObjects = that.state.staticObjects || {};
-        that.state.staticObjects.blockStat = new blockStat(that, 0, (h - 40), 20, w);
+    var createStaticObjects = function(){
+
+        $this.state.entities.blockStat = new StaticObjects.blockStat($this, 0, (h - 40), w, 20);
+        $this.state.entities.blockStat2 = new StaticObjects.blockStat($this, 300, (h - 200), 50, 50);
     }();
+
+    var createUi = function(){
+        $this.state.entities.titleAndFps = new ui.titleAndFps($this);
+    }();
+
+
+    var createCollisions = function(){
+       $this.state.collisions = $this.state.collisions || {};
+
+       $this.state.collisions.mouseAndBlock = new modules.collision();
+       $this.state.collisions.mouseAndBlock.detect($this.state.entities.player.state, $this.state.entities.blockStat.state, "block 1");
+
+
+       $this.state.collisions.mouseAndBlock2 = new modules.collision();
+       $this.state.collisions.mouseAndBlock2.detect($this.state.entities.player.state, $this.state.entities.blockStat2.state, "block 2");
+    }();
+
+    // Game Logic -|
 
     return this;
 }
 
 // Instantiate a new game in the global scope at 800px by 600px
-window.game = new Game(800, 600, 60, true);
+window.game = new EmeraldEngine(800, 600, 60, true);
 
 module.exports = game;
-},{"./core/game.loop.js":1,"./core/game.render.js":2,"./core/game.update.js":3,"./players/player.js":5,"./static/block.js":6,"./utils/utils.canvas.js":7}],5:[function(require,module,exports){
-var keys = require('../utils/utils.keysDown.js'),
-    mathHelpers = require('../utils/utils.math.js');
+},{"./core/game.collision.js":1,"./core/game.engineSettings.js":2,"./core/game.loop.js":3,"./core/game.render.js":4,"./core/game.update.js":5,"./gameObjects/players/player.js":7,"./gameObjects/static/block.js":8,"./gameObjects/ui/titleAndFps.js":9}],7:[function(require,module,exports){
+let keys = require('../../utils/utils.keysDown.js'),
+    mathHelpers = require('../../utils/utils.math.js');
 
 /** Player Module
  * Main player entity module.
  */
-function Player(scope, x, y) {
-    var player = this;
+function Player(scope, x, y, w, h) {
+    let player = this;
 
     // Create the initial state
     player.state = {
@@ -254,12 +309,16 @@ function Player(scope, x, y) {
             x: x,
             y: y
         },
-        moveSpeed: 1.5
+        size: {
+            width: w,
+            height: h
+        },
+        moveSpeed: 5
     };
 
     // Set up any other constants
-    var height = 23,
-        width = 16;
+    let height = h,
+        width = w;
 
     // Draw the player on the canvas
     player.render = function playerRender() {
@@ -300,27 +359,25 @@ function Player(scope, x, y) {
 }
 
 module.exports = Player;
-},{"../utils/utils.keysDown.js":8,"../utils/utils.math.js":9}],6:[function(require,module,exports){
-var keys = require('../utils/utils.keysDown.js'),
-    mathHelpers = require('../utils/utils.math.js');
-
-/** Player Module
- * Main player entity module.
- */
+},{"../../utils/utils.keysDown.js":11,"../../utils/utils.math.js":12}],8:[function(require,module,exports){
 function block(scope, x, y, w, h) {
-    var block = this;
+    let block = this;
 
     // Create the initial state
     block.state = {
         position: {
             x: x,
             y: y
+        },
+        size: {
+            height: h,
+            width: w
         }
     };
 
     // Set up any other constants
-    var height = w,
-        width = h;
+    let height = h,
+        width = w;
 
     // Draw the player on the canvas
     block.render = function blockRender() {
@@ -342,7 +399,35 @@ function block(scope, x, y, w, h) {
 }
 
 module.exports = block;
-},{"../utils/utils.keysDown.js":8,"../utils/utils.math.js":9}],7:[function(require,module,exports){
+},{}],9:[function(require,module,exports){
+function titleAndFps(scope) {
+    var titleAndFps = this;
+
+    // Draw the player on the canvas
+    titleAndFps.render = function() {
+         // Spit out some text
+        scope.context.font = '32px Arial';
+        scope.context.fillStyle = '#fff';
+        scope.context.fillText('It\'s dangerous to travel this route alone.', 5, 50);
+
+        // If we want to show the FPS, then render it in the top right corner.
+        if (scope.constants.showFps) {
+            scope.context.fillStyle = '#ff0';
+            scope.context.fillText(scope.loop.fps, scope.constants.width - 100, 50);
+        }
+    };
+
+    // Fired via the global update method.
+    // Mutates state as needed for proper rendering next state
+    titleAndFps.update = function() {
+        
+    };
+
+    return titleAndFps;
+}
+
+module.exports = titleAndFps;
+},{}],10:[function(require,module,exports){
 module.exports = {
     /** Determine the proper pixel ratio for the canvas */
     getPixelRatio : function getPixelRatio(context) {
@@ -388,7 +473,7 @@ module.exports = {
       return canvas;
     }
 };
-},{}],8:[function(require,module,exports){
+},{}],11:[function(require,module,exports){
 /** keysDown Utility Module
  * Monitors and determines whether a key 
  * is pressed down at any given moment.
@@ -447,7 +532,7 @@ function keysDown() {
 }
 
 module.exports = keysDown();
-},{}],9:[function(require,module,exports){
+},{}],12:[function(require,module,exports){
 /** 
  * Number.prototype.boundary
  * Binds a number between a minimum and a maximum amount.
@@ -463,4 +548,4 @@ var Boundary = function numberBoundary(min, max) {
 // Expose methods
 Number.prototype.boundary = Boundary;
 module.exports = Boundary;
-},{}]},{},[4]);
+},{}]},{},[6]);
