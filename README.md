@@ -1,5 +1,5 @@
 # JS Game
-This is a demo top-down game built in JavaScript, to be used as a reference/boilerplate/code-along for a blog post on [the blog of Matt Bengston](http://aesinv.com).
+EmeraldGameJavascript engine
 
 ## Installation
 Just clone the repo and `npm install`.
